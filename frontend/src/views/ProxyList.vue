@@ -236,8 +236,13 @@
 
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit" :loading="submitting">
-          {{ isEdit ? '更新' : '创建' }}
+        <el-button
+          type="primary"
+          @click="handleSubmit"
+          :loading="submitting || serverInfoLoading"
+          :disabled="serverInfoLoading"
+        >
+          {{ serverInfoLoading ? '加载中...' : (isEdit ? '更新' : '创建') }}
         </el-button>
       </template>
     </el-dialog>
@@ -266,6 +271,7 @@ const editingId = ref(null)
 const formRef = ref(null)
 const simpleMode = ref(true)
 const serverInfo = ref({ public_ip: '', next_port: 9000 })
+const serverInfoLoading = ref(false)
 
 const dialogTitle = computed(() => isEdit.value ? '编辑代理' : '新增代理')
 
@@ -340,11 +346,14 @@ const resetForm = () => {
 }
 
 const loadServerInfo = async () => {
+  serverInfoLoading.value = true
   try {
     const res = await getServerInfo()
     serverInfo.value = res.data || { public_ip: '', next_port: 9000 }
   } catch (error) {
     console.error('获取服务器信息失败:', error)
+  } finally {
+    serverInfoLoading.value = false
   }
 }
 
@@ -353,14 +362,14 @@ const showCreateDialog = () => {
   isEdit.value = false
   editingId.value = null
   simpleMode.value = true
+  dialogVisible.value = true
   loadServerInfo().then(() => {
-    // 简单模式自动填充
+    // 简单模式自动填充（必须在弹窗打开后异步填充，避免用户快速提交时port为0）
     if (simpleMode.value && serverInfo.value.public_ip) {
       formData.value.domain = serverInfo.value.public_ip
       formData.value.port = serverInfo.value.next_port
     }
   })
-  dialogVisible.value = true
 }
 
 const showEditDialog = (row) => {
@@ -395,6 +404,11 @@ const handleSubmit = async () => {
     // 端口兜底：优先用 serverInfo，其次用 9000
     if (!formData.value.port) {
       formData.value.port = serverInfo.value.next_port || 9000
+    }
+    // 前端校验：如果选择的端口已被占用，提示用户
+    if (serverInfo.value.used_ports && serverInfo.value.used_ports.includes(formData.value.port)) {
+      ElMessage.warning(`端口 ${formData.value.port} 已被占用，请重新打开弹窗获取最新端口`)
+      return
     }
   }
 

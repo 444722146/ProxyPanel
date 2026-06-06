@@ -357,7 +357,8 @@ func GetServerInfo(c *gin.Context) {
 	}
 
 	utils.Success(c, gin.H{
-		"public_ip": publicIP,
-		"next_port": nextPort,
+		"public_ip":  publicIP,
+		"next_port":  nextPort,
+		"used_ports": ports, // 返回已用端口列表，方便前端调试
 	})
 }
