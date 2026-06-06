@@ -128,18 +128,18 @@
         <el-form label-width="100px">
           <el-form-item label="证书机构">
             <el-radio-group v-model="freeCertCA">
-              <el-radio value="zerossl">
-                <span>ZeroSSL</span>
+              <el-radio value="letsencrypt">
+                <span>Let's Encrypt</span>
                 <el-tag size="small" type="success" style="margin-left: 6px;">推荐</el-tag>
               </el-radio>
-              <el-radio value="letsencrypt">Let's Encrypt</el-radio>
+              <el-radio value="zerossl">ZeroSSL</el-radio>
             </el-radio-group>
           </el-form-item>
 
           <el-form-item label="验证方式">
-            <el-tag type="success" size="small">DNS 验证</el-tag>
+            <el-tag type="success" size="small">HTTP 验证</el-tag>
             <div style="margin-top: 6px; color: #909399; font-size: 12px;">
-              证书申请通过DNS来验证域名的所有权，您需要添加一条TXT或CNAME记录来完成域名所有权验证
+              证书申请通过 HTTP 文件验证方式确认域名所有权，验证文件将自动放置在 Nginx 的 /.well-known/acme-challenge/ 目录下
             </div>
           </el-form-item>
 
@@ -155,7 +155,7 @@
           <template #title>
             <div>
               <p>1. 请确保域名已解析到本服务器</p>
-              <p>2. 申请过程需要您到域名DNS服务商添加TXT记录进行验证</p>
+              <p>2. 请确保服务器 80 端口可被外网访问（验证需要）</p>
               <p>3. 申请过程可能需要 30-60 秒</p>
             </div>
           </template>
@@ -329,7 +329,7 @@ const loadProxies = async () => {
 const showFreeCertDialog = (row) => {
   freeCertId.value = row.id
   freeCertDomain.value = row.domain
-  freeCertCA.value = 'zerossl'
+  freeCertCA.value = 'letsencrypt'
   freeCertAutoRenew.value = true
   freeCertIsIP.value = isIPDomain(row.domain)
   freeCertDialogVisible.value = true

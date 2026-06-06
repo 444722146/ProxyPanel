@@ -41,13 +41,13 @@ func RequestFreeCert(c *gin.Context) {
 	// 解析请求
 	var req RequestFreeCertRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		// 默认使用 ZeroSSL
-		req.CA = "zerossl"
+		// 默认使用 Let's Encrypt
+		req.CA = "letsencrypt"
 	}
 
 	// 验证 CA 类型
 	if req.CA != "letsencrypt" && req.CA != "zerossl" {
-		req.CA = "zerossl"
+		req.CA = "letsencrypt"
 	}
 
 	// 确保 acme 所需目录存在

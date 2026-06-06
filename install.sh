@@ -221,14 +221,10 @@ install_acme_sh() {
         rm -rf /tmp/acme.sh-repo
     fi
 
-    # 设置默认CA为 ZeroSSL（推荐）
-    ~/.acme.sh/acme.sh --set-default-ca --server zerossl
+    # 设置默认CA为 Let's Encrypt（开箱即用，无需注册）
+    ~/.acme.sh/acme.sh --set-default-ca --server letsencrypt
 
-    # 注册 ZeroSSL 账号
-    log_info "注册 ZeroSSL 账号..."
-    ~/.acme.sh/acme.sh --register-account -m 444722146@qq.com --server zerossl
-
-    log_success "acme.sh 安装完成（默认CA: ZeroSSL）"
+    log_success "acme.sh 安装完成（默认CA: Let's Encrypt）"
 }
 
 # 安装Docker（可选）
