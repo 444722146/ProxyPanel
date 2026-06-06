@@ -16,30 +16,32 @@ import (
 
 // NginxConfigData Nginx配置模板数据
 type NginxConfigData struct {
-	Domain     string
-	Port       int
-	TargetURL  string
-	TargetHost string
-	Token      string
-	FakeIP     string
-	Whitelist  []string
-	SSLEnabled bool
-	SSLCert    string
-	SSLKey     string
+	Domain       string
+	Port         int
+	TargetURL    string
+	TargetHost   string
+	Token        string
+	FakeIP       string
+	Whitelist    []string
+	SSLEnabled   bool
+	SSLCert      string
+	SSLKey       string
+	IsTargetHTTPS bool // 目标地址是否为HTTPS
 }
 
 // GenerateNginxConfig 生成Nginx配置文件
 func GenerateNginxConfig(rule *models.ProxyRule) error {
 	// 准备模板数据
 	data := NginxConfigData{
-		Domain:     rule.Domain,
-		Port:       rule.Port,
-		TargetURL:  rule.TargetURL,
-		Token:      rule.Token,
-		FakeIP:     rule.FakeIP,
-		SSLEnabled: rule.SSLEnabled,
-		SSLCert:    rule.SSLCert,
-		SSLKey:     rule.SSLKey,
+		Domain:        rule.Domain,
+		Port:          rule.Port,
+		TargetURL:     rule.TargetURL,
+		Token:         rule.Token,
+		FakeIP:        rule.FakeIP,
+		SSLEnabled:    rule.SSLEnabled,
+		SSLCert:       rule.SSLCert,
+		SSLKey:        rule.SSLKey,
+		IsTargetHTTPS: strings.HasPrefix(rule.TargetURL, "https://"),
 	}
 
 	// 从目标地址中提取 Host（去掉协议）
