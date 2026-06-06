@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  # ProxyPanel主服务
+  proxypanel:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: proxypanel
+    restart: unless-stopped
+    ports:
+      - "5000:5000"  # Web管理面板
+      - "80:80"      # HTTP代理
+      - "443:443"    # HTTPS代理
+    volumes:
+      - ./data:/app/data                 # 数据持久化
+      - ./ssl:/app/ssl                   # SSL证书存储
+      - ./nginx/sites-enabled:/etc/nginx/sites-enabled  # Nginx配置
+      - ./nginx/logs:/var/log/nginx      # 日志持久化
+    environment:
+      - SERVER_PORT=5000
+      - GIN_MODE=release
+      - TZ=Asia/Shanghai
+    networks:
+      - proxypanel-network
+
+  # 可选：前端独立服务（如果需要前后端分离部署）
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: proxypanel-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    networks:
+      - proxypanel-network
+    profiles:
+      - frontend-only  # 使用--profile frontend-only启动
+
+networks:
+  proxypanel-network:
+    driver: bridge
+
+volumes:
+  data:
+  ssl:
+  nginx-logs:

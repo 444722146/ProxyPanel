@@ -1,0 +1,40 @@
+# 依赖目录
+backend/frontend/dist/
+frontend/node_modules/
+
+# Go 编译产物
+backend/proxypanel
+backend/data/*.db
+backend/data/*.db-shm
+backend/data/*.db-wal
+
+# SSL 证书和密钥（敏感）
+ssl/*.key
+ssl/*.pem
+ssl/*.crt
+ssl/*.csr
+
+# ACME 数据
+.acme.sh/
+
+# Nginx 生成的站点配置
+nginx/sites-enabled/
+
+# 系统文件
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.idea/
+.vscode/
+*.code-workspace
+
+# 日志
+*.log
+nginx/logs/
+
+# WorkBuddy
+.workbuddy/
