@@ -135,8 +135,8 @@ func UpdateProxyRule(c *gin.Context) {
 		}
 	}
 
-	// 删除旧的Nginx配置
-	utils.DeleteNginxConfig(existingRule.Domain)
+	// 删除旧的Nginx配置（用旧域名+旧端口定位）
+	utils.DeleteNginxConfig(existingRule.Domain, existingRule.Port)
 
 	// 更新规则
 	existingRule.Name = updateData.Name
@@ -197,7 +197,7 @@ func DeleteProxyRule(c *gin.Context) {
 	}
 
 	// 删除Nginx配置
-	if err := utils.DeleteNginxConfig(rule.Domain); err != nil {
+	if err := utils.DeleteNginxConfig(rule.Domain, rule.Port); err != nil {
 		utils.Error(c, 500, "删除Nginx配置失败: "+err.Error())
 		return
 	}
@@ -254,7 +254,7 @@ func ToggleProxyRule(c *gin.Context) {
 			return
 		}
 	} else {
-		if err := utils.DeleteNginxConfig(rule.Domain); err != nil {
+		if err := utils.DeleteNginxConfig(rule.Domain, rule.Port); err != nil {
 			utils.ErrorWithData(c, 500, "状态更新成功但删除Nginx配置失败", gin.H{
 				"rule": rule,
 				"nginx_error": err.Error(),

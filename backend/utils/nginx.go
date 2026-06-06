@@ -80,8 +80,12 @@ func GenerateNginxConfig(rule *models.ProxyRule) error {
 		return fmt.Errorf("执行模板失败: %v", err)
 	}
 
-	// 写入配置文件
-	configPath := filepath.Join(config.AppConfig.Nginx.ConfigDir, fmt.Sprintf("proxy_%s.conf", SanitizeFilename(rule.Domain)))
+	// 写入配置文件（文件名包含域名和端口，避免同域名不同端口互相覆盖）
+	portSuffix := rule.Port
+	if portSuffix == 0 {
+		portSuffix = 80
+	}
+	configPath := filepath.Join(config.AppConfig.Nginx.ConfigDir, fmt.Sprintf("proxy_%s_%d.conf", SanitizeFilename(rule.Domain), portSuffix))
 	if err := os.WriteFile(configPath, buf.Bytes(), 0644); err != nil {
 		return fmt.Errorf("写入配置文件失败: %v", err)
 	}
@@ -90,8 +94,12 @@ func GenerateNginxConfig(rule *models.ProxyRule) error {
 }
 
 // DeleteNginxConfig 删除Nginx配置文件
-func DeleteNginxConfig(domain string) error {
-	configPath := filepath.Join(config.AppConfig.Nginx.ConfigDir, fmt.Sprintf("proxy_%s.conf", SanitizeFilename(domain)))
+func DeleteNginxConfig(domain string, port int) error {
+	portSuffix := port
+	if portSuffix == 0 {
+		portSuffix = 80
+	}
+	configPath := filepath.Join(config.AppConfig.Nginx.ConfigDir, fmt.Sprintf("proxy_%s_%d.conf", SanitizeFilename(domain), portSuffix))
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		return nil // 文件不存在，无需删除
 	}
