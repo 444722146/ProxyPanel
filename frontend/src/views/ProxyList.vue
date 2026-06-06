@@ -388,11 +388,13 @@ const handleSubmit = async () => {
 
   // 简单模式自动补全
   if (simpleMode.value && !isEdit.value) {
-    if (!formData.value.domain && serverInfo.value.public_ip) {
-      formData.value.domain = serverInfo.value.public_ip
+    // 域名兜底：优先用 serverInfo，其次用当前访问地址
+    if (!formData.value.domain) {
+      formData.value.domain = serverInfo.value.public_ip || window.location.hostname
     }
+    // 端口兜底：优先用 serverInfo，其次用 9000
     if (!formData.value.port) {
-      formData.value.port = serverInfo.value.next_port
+      formData.value.port = serverInfo.value.next_port || 9000
     }
   }
 
