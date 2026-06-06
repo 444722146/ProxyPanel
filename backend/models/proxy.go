@@ -109,9 +109,9 @@ func UpdateProxyRule(rule *ProxyRule) error {
 	return db.Save(rule).Error
 }
 
-// DeleteProxyRule 删除代理规则
+// DeleteProxyRule 删除代理规则（硬删除，避免软删除导致唯一索引冲突）
 func DeleteProxyRule(id uint) error {
-	return db.Delete(&ProxyRule{}, id).Error
+	return db.Unscoped().Delete(&ProxyRule{}, id).Error
 }
 
 // GetEnabledProxyRules 获取所有启用的代理规则
