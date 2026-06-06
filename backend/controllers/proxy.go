@@ -58,14 +58,14 @@ func CreateProxyRule(c *gin.Context) {
 		return
 	}
 
-	// 检查域名是否已存在
-	existing, err := models.GetProxyRuleByDomain(rule.Domain)
+	// 检查域名+端口组合是否已存在
+	existing, err := models.GetProxyRuleByDomainAndPort(rule.Domain, rule.Port)
 	if err != nil {
-		utils.InternalError(c, "检查域名失败: "+err.Error())
+		utils.InternalError(c, "检查域名端口组合失败: "+err.Error())
 		return
 	}
 	if existing != nil {
-		utils.BadRequest(c, "该域名已被使用")
+		utils.BadRequest(c, "该域名和端口组合已被使用")
 		return
 	}
 
@@ -122,15 +122,15 @@ func UpdateProxyRule(c *gin.Context) {
 		return
 	}
 
-	// 检查域名是否与其他规则冲突
-	if updateData.Domain != existingRule.Domain {
-		conflictRule, err := models.GetProxyRuleByDomain(updateData.Domain)
+	// 检查域名+端口组合是否与其他规则冲突
+	if updateData.Domain != existingRule.Domain || updateData.Port != existingRule.Port {
+		conflictRule, err := models.GetProxyRuleByDomainAndPort(updateData.Domain, updateData.Port)
 		if err != nil {
-			utils.InternalError(c, "检查域名失败: "+err.Error())
+			utils.InternalError(c, "检查域名端口组合失败: "+err.Error())
 			return
 		}
 		if conflictRule != nil && conflictRule.ID != existingRule.ID {
-			utils.BadRequest(c, "该域名已被其他规则使用")
+			utils.BadRequest(c, "该域名和端口组合已被其他规则使用")
 			return
 		}
 	}

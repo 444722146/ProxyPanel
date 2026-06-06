@@ -11,8 +11,8 @@ import (
 type ProxyRule struct {
 	ID         uint           `json:"id" gorm:"primaryKey;autoIncrement"`
 	Name       string         `json:"name" gorm:"type:varchar(255);not null;uniqueIndex:idx_name"`
-	Domain     string         `json:"domain" gorm:"type:varchar(255);not null;uniqueIndex:idx_domain"`
-	Port       int            `json:"port" gorm:"default:0"` // 监听端口，0表示使用默认端口
+	Domain     string         `json:"domain" gorm:"type:varchar(255);not null;uniqueIndex:idx_domain_port"`
+	Port       int            `json:"port" gorm:"default:0;uniqueIndex:idx_domain_port"` // 监听端口，0表示使用默认端口
 	TargetURL  string         `json:"target_url" gorm:"type:varchar(500);not null"`
 	FakeIP     string         `json:"fake_ip" gorm:"type:varchar(50);default:'127.0.0.1'"`
 	Token      string         `json:"token" gorm:"type:varchar(255)"`
@@ -75,6 +75,19 @@ func GetProxyRuleByID(id uint) (*ProxyRule, error) {
 func GetProxyRuleByDomain(domain string) (*ProxyRule, error) {
 	var rule ProxyRule
 	err := db.Where("domain = ?", domain).First(&rule).Error
+	if err == gorm.ErrRecordNotFound {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &rule, nil
+}
+
+// GetProxyRuleByDomainAndPort 根据域名和端口获取代理规则（组合唯一校验）
+func GetProxyRuleByDomainAndPort(domain string, port int) (*ProxyRule, error) {
+	var rule ProxyRule
+	err := db.Where("domain = ? AND port = ?", domain, port).First(&rule).Error
 	if err == gorm.ErrRecordNotFound {
 		return nil, nil
 	}
