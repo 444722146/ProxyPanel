@@ -108,6 +108,13 @@ func GetEnabledProxyRules() ([]ProxyRule, error) {
 	return rules, err
 }
 
+// GetUsedPorts 获取所有已使用的端口（大于0的）
+func GetUsedPorts() ([]int, error) {
+	var ports []int
+	err := db.Model(&ProxyRule{}).Where("port > 0").Pluck("port", &ports).Error
+	return ports, err
+}
+
 // db 全局数据库实例，在database.go中初始化
 var db *gorm.DB
 

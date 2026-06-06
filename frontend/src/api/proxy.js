@@ -35,6 +35,9 @@ export const toggleProxyRule = (id) => api.post(`/proxy/${id}/toggle`)
 export const testNginxConfig = () => api.post('/nginx/test')
 export const syncProxyConfigs = () => api.post('/nginx/sync')
 
+// 服务器信息API
+export const getServerInfo = () => api.get('/server-info')
+
 // 日志API
 export const getAccessLog = (domain, lines = 100) => api.get(`/log/access`, { params: { domain, lines } })
 export const getErrorLog = (domain, lines = 100) => api.get(`/log/error`, { params: { domain, lines } })

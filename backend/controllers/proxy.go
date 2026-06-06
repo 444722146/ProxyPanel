@@ -1,7 +1,10 @@
 package controllers
 
 import (
+	"io"
+	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -285,5 +288,41 @@ func TestNginx(c *gin.Context) {
 	utils.Success(c, gin.H{
 		"success": ok,
 		"output":  output,
+	})
+}
+
+// GetServerInfo 获取服务器信息（公网IP、下一个可用端口）
+func GetServerInfo(c *gin.Context) {
+	// 获取公网IP
+	publicIP := ""
+	resp, err := http.Get("https://api.ip.sb/ip")
+	if err == nil {
+		defer resp.Body.Close()
+		body, _ := io.ReadAll(resp.Body)
+		publicIP = strings.TrimSpace(string(body))
+	}
+	if publicIP == "" {
+		publicIP = c.ClientIP()
+	}
+
+	// 获取下一个可用端口（从9000开始）
+	nextPort := 9000
+	ports, err := models.GetUsedPorts()
+	if err == nil {
+		portMap := make(map[int]bool)
+		for _, p := range ports {
+			portMap[p] = true
+		}
+		for p := 9000; p <= 65535; p++ {
+			if !portMap[p] {
+				nextPort = p
+				break
+			}
+		}
+	}
+
+	utils.Success(c, gin.H{
+		"public_ip": publicIP,
+		"next_port": nextPort,
 	})
 }

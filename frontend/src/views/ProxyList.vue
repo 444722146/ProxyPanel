@@ -94,6 +94,30 @@
       width="680px"
       :close-on-click-modal="false"
     >
+      <!-- 模式切换（仅创建时显示） -->
+      <div v-if="!isEdit" style="text-align: center; margin-bottom: 20px;">
+        <el-radio-group v-model="simpleMode" size="small">
+          <el-radio-button :value="true">简单模式</el-radio-button>
+          <el-radio-button :value="false">高级模式</el-radio-button>
+        </el-radio-group>
+      </div>
+
+      <!-- 简单模式提示 -->
+      <el-alert
+        v-if="simpleMode && !isEdit"
+        type="info"
+        :closable="false"
+        style="margin-bottom: 16px;"
+      >
+        <template #title>
+          <div>
+            <p>简单模式下，访问域名将自动使用服务器公网IP <strong>{{ serverInfo.public_ip }}</strong></p>
+            <p>监听端口将自动分配为 <strong>{{ serverInfo.next_port }}</strong></p>
+            <p>您只需要填写代理名称和目标地址即可</p>
+          </div>
+        </template>
+      </el-alert>
+
       <el-form
         :model="formData"
         :rules="formRules"
@@ -112,33 +136,35 @@
             <el-input v-model="formData.name" placeholder="如：API Gateway 01" />
           </el-form-item>
 
-          <el-row :gutter="16">
-            <el-col :span="16">
-              <el-form-item label="访问域名" prop="domain">
-                <el-input v-model="formData.domain" placeholder="如：api.example.com" />
-              </el-form-item>
-            </el-col>
-            <el-col :span="8">
-              <el-form-item label="监听端口" prop="port">
-                <el-input-number
-                  v-model="formData.port"
-                  :min="0"
-                  :max="65535"
-                  :controls="false"
-                  placeholder="默认"
-                  style="width: 100%;"
-                />
-              </el-form-item>
-            </el-col>
-          </el-row>
+          <template v-if="!simpleMode || isEdit">
+            <el-row :gutter="16">
+              <el-col :span="16">
+                <el-form-item label="访问域名" prop="domain">
+                  <el-input v-model="formData.domain" placeholder="如：api.example.com" />
+                </el-form-item>
+              </el-col>
+              <el-col :span="8">
+                <el-form-item label="监听端口" prop="port">
+                  <el-input-number
+                    v-model="formData.port"
+                    :min="0"
+                    :max="65535"
+                    :controls="false"
+                    placeholder="默认"
+                    style="width: 100%;"
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </template>
 
           <el-form-item label="目标地址" prop="target_url">
             <el-input v-model="formData.target_url" placeholder="如：http://192.168.1.100:8080" />
           </el-form-item>
         </div>
 
-        <!-- 高级配置 -->
-        <div class="form-section">
+        <!-- 高级配置（仅高级模式显示） -->
+        <div class="form-section" v-if="!simpleMode">
           <div class="section-title">
             <el-icon><Setting /></el-icon>
             <span>高级配置</span>
@@ -175,8 +201,8 @@
           </el-form-item>
         </div>
 
-        <!-- SSL证书配置 -->
-        <div class="form-section">
+        <!-- SSL证书配置（仅高级模式显示） -->
+        <div class="form-section" v-if="!simpleMode">
           <div class="section-title">
             <el-icon><Lock /></el-icon>
             <span>SSL证书配置（可选）</span>
@@ -225,7 +251,8 @@ import {
   createProxyRule,
   updateProxyRule,
   deleteProxyRule,
-  toggleProxyRule
+  toggleProxyRule,
+  getServerInfo
 } from '@/api/proxy'
 
 const loading = ref(false)
@@ -236,6 +263,8 @@ const dialogVisible = ref(false)
 const isEdit = ref(false)
 const editingId = ref(null)
 const formRef = ref(null)
+const simpleMode = ref(true)
+const serverInfo = ref({ public_ip: '', next_port: 9000 })
 
 const dialogTitle = computed(() => isEdit.value ? '编辑代理' : '新增代理')
 
@@ -253,11 +282,16 @@ const formData = ref({
   ssl_key: ''
 })
 
-const formRules = {
-  name: [{ required: true, message: '请输入代理名称', trigger: 'blur' }],
-  domain: [{ required: true, message: '请输入域名', trigger: 'blur' }],
-  target_url: [{ required: true, message: '请输入目标地址', trigger: 'blur' }]
-}
+const formRules = computed(() => {
+  const rules = {
+    name: [{ required: true, message: '请输入代理名称', trigger: 'blur' }],
+    target_url: [{ required: true, message: '请输入目标地址', trigger: 'blur' }]
+  }
+  if (!simpleMode.value || isEdit.value) {
+    rules.domain = [{ required: true, message: '请输入域名', trigger: 'blur' }]
+  }
+  return rules
+})
 
 const filteredProxies = computed(() => {
   if (!searchKeyword.value) return proxies.value
@@ -304,16 +338,34 @@ const resetForm = () => {
   }
 }
 
+const loadServerInfo = async () => {
+  try {
+    const res = await getServerInfo()
+    serverInfo.value = res.data || { public_ip: '', next_port: 9000 }
+  } catch (error) {
+    console.error('获取服务器信息失败:', error)
+  }
+}
+
 const showCreateDialog = () => {
   resetForm()
   isEdit.value = false
   editingId.value = null
+  simpleMode.value = true
+  loadServerInfo().then(() => {
+    // 简单模式自动填充
+    if (simpleMode.value && serverInfo.value.public_ip) {
+      formData.value.domain = serverInfo.value.public_ip
+      formData.value.port = serverInfo.value.next_port
+    }
+  })
   dialogVisible.value = true
 }
 
 const showEditDialog = (row) => {
   isEdit.value = true
   editingId.value = row.id
+  simpleMode.value = false  // 编辑默认高级模式
   formData.value = {
     name: row.name,
     domain: row.domain,
@@ -332,7 +384,17 @@ const showEditDialog = (row) => {
 
 const handleSubmit = async () => {
   if (!formRef.value) return
-  
+
+  // 简单模式自动补全
+  if (simpleMode.value && !isEdit.value) {
+    if (!formData.value.domain && serverInfo.value.public_ip) {
+      formData.value.domain = serverInfo.value.public_ip
+    }
+    if (!formData.value.port) {
+      formData.value.port = serverInfo.value.next_port
+    }
+  }
+
   try {
     await formRef.value.validate()
   } catch (error) {

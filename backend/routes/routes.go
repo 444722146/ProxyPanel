@@ -43,6 +43,9 @@ func SetupRouter() *gin.Engine {
 			nginxGroup.POST("/test", controllers.TestNginx)        // 测试配置
 		}
 
+		// 服务器信息路由
+		api.GET("/server-info", controllers.GetServerInfo) // 获取服务器信息
+
 		// 日志路由
 		logGroup := api.Group("/log")
 		{
