@@ -40,18 +40,19 @@
           </template>
         </el-table-column>
         <el-table-column prop="target_url" label="目标地址" min-width="200" show-overflow-tooltip />
-        <el-table-column label="访问地址" width="220">
+        <el-table-column label="API对接地址" width="220">
           <template #default="{ row }">
-            <el-link
+            <el-button
               v-if="row.access_url"
-              :href="row.access_url"
-              target="_blank"
               type="primary"
+              link
+              size="small"
+              @click="copyToClipboard(row.access_url)"
               :underline="false"
             >
-              <el-icon style="margin-right: 4px"><Link /></el-icon>
+              <el-icon style="margin-right: 4px"><CopyDocument /></el-icon>
               {{ row.access_url }}
-            </el-link>
+            </el-button>
             <span v-else style="color: #999">-</span>
           </template>
         </el-table-column>
@@ -449,6 +450,23 @@ const handleDelete = async (row) => {
     if (error !== 'cancel') {
       ElMessage.error('删除失败: ' + error.message)
     }
+  }
+}
+
+const copyToClipboard = async (text) => {
+  try {
+    await navigator.clipboard.writeText(text)
+    ElMessage.success('已复制到剪贴板')
+  } catch (err) {
+    const textarea = document.createElement('textarea')
+    textarea.value = text
+    textarea.style.position = 'fixed'
+    textarea.style.opacity = '0'
+    document.body.appendChild(textarea)
+    textarea.select()
+    document.execCommand('copy')
+    document.body.removeChild(textarea)
+    ElMessage.success('已复制到剪贴板')
   }
 }
 
