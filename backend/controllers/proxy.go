@@ -2,9 +2,11 @@ package controllers
 
 import (
 	"io"
+	"net"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -291,18 +293,51 @@ func TestNginx(c *gin.Context) {
 	})
 }
 
+// getOutboundIP 获取服务器出站IP（最可靠的方式）
+func getOutboundIP() string {
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		return ""
+	}
+	defer conn.Close()
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
+	return localAddr.IP.String()
+}
+
+// getPublicIP 从多个API获取公网IP
+func getPublicIP() string {
+	apis := []string{
+		"https://api.ipify.org",
+		"https://ipinfo.io/ip",
+		"http://ifconfig.me/ip",
+		"https://api.ip.sb/ip",
+	}
+
+	client := &http.Client{Timeout: 3 * time.Second}
+	for _, api := range apis {
+		resp, err := client.Get(api)
+		if err != nil {
+			continue
+		}
+		body, err := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if err != nil {
+			continue
+		}
+		ip := strings.TrimSpace(string(body))
+		if ip != "" && net.ParseIP(ip) != nil {
+			return ip
+		}
+	}
+	return ""
+}
+
 // GetServerInfo 获取服务器信息（公网IP、下一个可用端口）
 func GetServerInfo(c *gin.Context) {
-	// 获取公网IP
-	publicIP := ""
-	resp, err := http.Get("https://api.ip.sb/ip")
-	if err == nil {
-		defer resp.Body.Close()
-		body, _ := io.ReadAll(resp.Body)
-		publicIP = strings.TrimSpace(string(body))
-	}
+	// 获取公网IP（多种方式）
+	publicIP := getPublicIP()
 	if publicIP == "" {
-		publicIP = c.ClientIP()
+		publicIP = getOutboundIP()
 	}
 
 	// 获取下一个可用端口（从9000开始）
