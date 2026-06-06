@@ -33,6 +33,12 @@ func InitDB() (*gorm.DB, error) {
 		return nil, err
 	}
 
+	// 迁移：删除旧版的 domain 单字段唯一索引（已改为 domain+port 组合索引）
+	if err := db.Migrator().DropIndex(&models.ProxyRule{}, "idx_domain"); err != nil {
+		// 索引不存在时忽略错误（已经删过或从未创建过）
+		_ = err
+	}
+
 	// 设置到models包
 	models.SetDB(db)
 
