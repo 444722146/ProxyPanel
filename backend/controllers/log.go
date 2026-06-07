@@ -52,16 +52,16 @@ func GetErrorLog(c *gin.Context) {
 	})
 }
 
-// GetGeneralAccessLog 获取通用访问日志
+// GetGeneralAccessLog 获取通用访问日志（合并所有代理日志）
 func GetGeneralAccessLog(c *gin.Context) {
 	lines := c.DefaultQuery("lines", "100")
 	
 	logPath := filepath.Join(config.AppConfig.Nginx.LogDir, "access.log")
-	
 	logs, err := readLogFile(logPath, lines)
-	if err != nil {
-		utils.Error(c, 500, "读取访问日志失败: "+err.Error())
-		return
+	
+	// 如果通用日志不存在或为空，尝试合并所有代理日志
+	if err != nil || len(logs) == 0 || (len(logs) == 1 && logs[0] == "日志文件不存在") {
+		logs = mergeProxyLogs("access", lines)
 	}
 	
 	utils.Success(c, gin.H{
@@ -70,22 +70,77 @@ func GetGeneralAccessLog(c *gin.Context) {
 	})
 }
 
-// GetGeneralErrorLog 获取通用错误日志
+// GetGeneralErrorLog 获取通用错误日志（合并所有代理日志）
 func GetGeneralErrorLog(c *gin.Context) {
 	lines := c.DefaultQuery("lines", "100")
 	
 	logPath := filepath.Join(config.AppConfig.Nginx.LogDir, "error.log")
-	
 	logs, err := readLogFile(logPath, lines)
-	if err != nil {
-		utils.Error(c, 500, "读取错误日志失败: "+err.Error())
-		return
+	
+	// 如果通用日志不存在或为空，尝试合并所有代理日志
+	if err != nil || len(logs) == 0 || (len(logs) == 1 && logs[0] == "日志文件不存在") {
+		logs = mergeProxyLogs("error", lines)
 	}
 	
 	utils.Success(c, gin.H{
 		"path": logPath,
 		"logs": logs,
 	})
+}
+
+// mergeProxyLogs 合并所有代理规则的日志文件
+func mergeProxyLogs(logType string, linesStr string) []string {
+	dir := config.AppConfig.Nginx.LogDir
+	files, err := os.ReadDir(dir)
+	if err != nil {
+		return []string{"读取日志目录失败: " + err.Error()}
+	}
+	
+	// 收集所有 proxy_*_access.log 或 proxy_*_error.log 文件
+	var matchedFiles []string
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+		name := file.Name()
+		if strings.HasPrefix(name, "proxy_") && strings.HasSuffix(name, "_"+logType+".log") {
+			matchedFiles = append(matchedFiles, filepath.Join(dir, name))
+		}
+	}
+	
+	if len(matchedFiles) == 0 {
+		return []string{"暂无日志内容"}
+	}
+	
+	// 解析行数限制
+	maxLines := 100
+	if linesStr != "" {
+		if parsed, err := parseLines(linesStr); err == nil {
+			maxLines = parsed
+		}
+	}
+	
+	// 读取每个文件的最后N行并合并
+	var allLines []string
+	for _, path := range matchedFiles {
+		lines, _ := readLogFile(path, "10000") // 先读取全部
+		if len(lines) > 0 && !(len(lines) == 1 && lines[0] == "日志文件不存在") {
+			// 添加文件名头
+			allLines = append(allLines, "# === "+filepath.Base(path)+" ===")
+			allLines = append(allLines, lines...)
+		}
+	}
+	
+	// 如果行数太多，截断尾部
+	if len(allLines) > maxLines {
+		allLines = allLines[len(allLines)-maxLines:]
+	}
+	
+	if len(allLines) == 0 {
+		return []string{"暂无日志内容"}
+	}
+	
+	return allLines
 }
 
 // ClearLog 清空日志
