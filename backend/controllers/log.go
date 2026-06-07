@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -110,20 +111,21 @@ func mergeProxyLogs(logType string, linesStr string) []string {
 		}
 	}
 	
-	// 读取每个文件的最后N行并合并
+	// 每个文件平均分配行数，保留文件头
+	perFile := maxLines / len(matchedFiles)
+	if perFile < 10 {
+		perFile = 10 // 每个文件至少保留10行
+	}
+	
 	var allLines []string
 	for _, path := range matchedFiles {
-		lines, _ := readLogFile(path, "10000") // 先读取全部
+		lines, _ := readLogFile(path, strconv.Itoa(perFile))
 		if len(lines) > 0 && !(len(lines) == 1 && lines[0] == "日志文件不存在") {
 			// 添加文件名头
 			allLines = append(allLines, "# === "+filepath.Base(path)+" ===")
 			allLines = append(allLines, lines...)
+			allLines = append(allLines, "") // 空行分隔
 		}
-	}
-	
-	// 如果行数太多，截断尾部
-	if len(allLines) > maxLines {
-		allLines = allLines[len(allLines)-maxLines:]
 	}
 	
 	if len(allLines) == 0 {
@@ -279,27 +281,5 @@ func getLogFilename(domain string, port string, logType string) string {
 
 // parseLines 解析行数参数
 func parseLines(linesStr string) (int, error) {
-	var lines int
-	_, err := sscanf(linesStr, "%d", &lines)
-	return lines, err
-}
-
-// sscanf 简单的字符串解析函数
-func sscanf(str string, format string, dest *int) (int, error) {
-	// 简化实现：直接转换
-	var result int
-	var err error
-	
-	for i := 0; i < len(str); i++ {
-		if str[i] >= '0' && str[i] <= '9' {
-			result = result * 10 + int(str[i] - '0')
-		}
-	}
-	
-	if result == 0 && str != "0" {
-		err = os.ErrInvalid
-	}
-	
-	*dest = result
-	return 1, err
+	return strconv.Atoi(linesStr)
 }

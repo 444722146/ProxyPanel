@@ -56,9 +56,13 @@ func UploadSSLCertificate(c *gin.Context) {
 		os.MkdirAll(sslDir, 0755)
 	}
 
-	// 保存证书文件
-	certPath := filepath.Join(sslDir, fmt.Sprintf("%s.crt", utils.SanitizeFilename(rule.Domain)))
-	keyPath := filepath.Join(sslDir, fmt.Sprintf("%s.key", utils.SanitizeFilename(rule.Domain)))
+	// 保存证书文件（文件名含端口，避免同域名不同端口的证书互相覆盖）
+	portSuffix := rule.Port
+	if portSuffix == 0 {
+		portSuffix = 80
+	}
+	certPath := filepath.Join(sslDir, fmt.Sprintf("%s_%d.crt", utils.SanitizeFilename(rule.Domain), portSuffix))
+	keyPath := filepath.Join(sslDir, fmt.Sprintf("%s_%d.key", utils.SanitizeFilename(rule.Domain), portSuffix))
 
 	if err := c.SaveUploadedFile(certFile, certPath); err != nil {
 		utils.InternalError(c, "保存证书文件失败: "+err.Error())
@@ -168,8 +172,12 @@ func GenerateSelfSignedCertificate(c *gin.Context) {
 		return
 	}
 
-	// 保存私钥
-	keyPath := filepath.Join(sslDir, fmt.Sprintf("%s.key", utils.SanitizeFilename(rule.Domain)))
+	// 保存私钥（文件名含端口，避免同域名不同端口的证书互相覆盖）
+	portSuffix := rule.Port
+	if portSuffix == 0 {
+		portSuffix = 80
+	}
+	keyPath := filepath.Join(sslDir, fmt.Sprintf("%s_%d.key", utils.SanitizeFilename(rule.Domain), portSuffix))
 	keyPEM := pem.EncodeToMemory(&pem.Block{
 		Type:  "RSA PRIVATE KEY",
 		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
@@ -180,7 +188,7 @@ func GenerateSelfSignedCertificate(c *gin.Context) {
 	}
 
 	// 保存证书
-	certPath := filepath.Join(sslDir, fmt.Sprintf("%s.crt", utils.SanitizeFilename(rule.Domain)))
+	certPath := filepath.Join(sslDir, fmt.Sprintf("%s_%d.crt", utils.SanitizeFilename(rule.Domain), portSuffix))
 	certPEM := pem.EncodeToMemory(&pem.Block{
 		Type:  "CERTIFICATE",
 		Bytes: certDER,
