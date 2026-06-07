@@ -11,13 +11,13 @@
         </el-col>
         
         <el-col :span="6">
-          <el-select v-model="selectedDomain" placeholder="选择域名" clearable>
-            <el-option label="全部域名" value="" />
+          <el-select v-model="selectedProxyId" placeholder="选择代理" clearable @change="onProxyChange">
+            <el-option label="全部代理" :value="null" />
             <el-option
               v-for="proxy in proxies"
               :key="proxy.id"
-              :label="proxy.domain"
-              :value="proxy.domain"
+              :label="proxy.domain + ':' + proxy.port"
+              :value="proxy.id"
             />
           </el-select>
         </el-col>
@@ -90,7 +90,9 @@ const loading = ref(false)
 const clearing = ref(false)
 const proxies = ref([])
 const logType = ref('access')
+const selectedProxyId = ref(null)
 const selectedDomain = ref('')
+const selectedPort = ref('')
 const searchKeyword = ref('')
 const lineCount = ref(100)
 const logContent = ref('')
@@ -104,6 +106,20 @@ const loadProxies = async () => {
   }
 }
 
+const onProxyChange = (id) => {
+  if (!id) {
+    selectedDomain.value = ''
+    selectedPort.value = ''
+  } else {
+    const proxy = proxies.value.find(p => p.id === id)
+    if (proxy) {
+      selectedDomain.value = proxy.domain
+      selectedPort.value = String(proxy.port)
+    }
+  }
+  loadLogs()
+}
+
 const loadLogs = async () => {
   loading.value = true
   try {
@@ -112,13 +128,13 @@ const loadLogs = async () => {
     // 根据日志类型和域名选择不同的API
     if (logType.value === 'access') {
       if (selectedDomain.value) {
-        res = await getAccessLog(selectedDomain.value, lineCount.value)
+        res = await getAccessLog(selectedDomain.value, selectedPort.value, lineCount.value)
       } else {
         res = await getGeneralAccessLog(lineCount.value)
       }
     } else {
       if (selectedDomain.value) {
-        res = await getErrorLog(selectedDomain.value, lineCount.value)
+        res = await getErrorLog(selectedDomain.value, selectedPort.value, lineCount.value)
       } else {
         res = await getGeneralErrorLog(lineCount.value)
       }
@@ -150,6 +166,7 @@ const handleSearch = async () => {
     const res = await searchLog(
       searchKeyword.value,
       selectedDomain.value,
+      selectedPort.value,
       logType.value,
       lineCount.value
     )
@@ -180,7 +197,7 @@ const handleClear = async () => {
     )
     
     clearing.value = true
-    await clearLog(logType.value, selectedDomain.value)
+    await clearLog(logType.value, selectedDomain.value, selectedPort.value)
     ElMessage.success('日志已清空')
     logContent.value = '日志已清空'
   } catch (error) {

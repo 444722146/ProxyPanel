@@ -39,12 +39,12 @@ export const syncProxyConfigs = () => api.post('/nginx/sync')
 export const getServerInfo = () => api.get('/server-info')
 
 // 日志API
-export const getAccessLog = (domain, lines = 100) => api.get(`/log/access`, { params: { domain, lines } })
-export const getErrorLog = (domain, lines = 100) => api.get(`/log/error`, { params: { domain, lines } })
+export const getAccessLog = (domain, port, lines = 100) => api.get(`/log/access`, { params: { domain, port, lines } })
+export const getErrorLog = (domain, port, lines = 100) => api.get(`/log/error`, { params: { domain, port, lines } })
 export const getGeneralAccessLog = (lines = 100) => api.get(`/log/access/general`, { params: { lines } })
 export const getGeneralErrorLog = (lines = 100) => api.get(`/log/error/general`, { params: { lines } })
-export const clearLog = (type, domain) => api.delete(`/log/clear`, { params: { type, domain } })
-export const searchLog = (keyword, domain, type, lines = 100) => api.get(`/log/search`, { params: { keyword, domain, type, lines } })
+export const clearLog = (type, domain, port) => api.delete(`/log/clear`, { params: { type, domain, port } })
+export const searchLog = (keyword, domain, port, type, lines = 100) => api.get(`/log/search`, { params: { keyword, domain, port, type, lines } })
 
 // SSL证书API
 export const uploadSSLCertificate = (id, certFile, keyFile) => {

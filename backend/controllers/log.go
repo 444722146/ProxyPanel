@@ -15,9 +15,10 @@ import (
 // GetAccessLog 获取访问日志
 func GetAccessLog(c *gin.Context) {
 	domain := c.Query("domain")
+	port := c.Query("port")
 	lines := c.DefaultQuery("lines", "100")
 	
-	logPath := filepath.Join(config.AppConfig.Nginx.LogDir, getLogFilename(domain, "access"))
+	logPath := filepath.Join(config.AppConfig.Nginx.LogDir, getLogFilename(domain, port, "access"))
 	
 	logs, err := readLogFile(logPath, lines)
 	if err != nil {
@@ -34,9 +35,10 @@ func GetAccessLog(c *gin.Context) {
 // GetErrorLog 获取错误日志
 func GetErrorLog(c *gin.Context) {
 	domain := c.Query("domain")
+	port := c.Query("port")
 	lines := c.DefaultQuery("lines", "100")
 	
-	logPath := filepath.Join(config.AppConfig.Nginx.LogDir, getLogFilename(domain, "error"))
+	logPath := filepath.Join(config.AppConfig.Nginx.LogDir, getLogFilename(domain, port, "error"))
 	
 	logs, err := readLogFile(logPath, lines)
 	if err != nil {
@@ -90,8 +92,9 @@ func GetGeneralErrorLog(c *gin.Context) {
 func ClearLog(c *gin.Context) {
 	logType := c.Query("type") // access 或 error
 	domain := c.Query("domain")
+	port := c.Query("port")
 	
-	logPath := filepath.Join(config.AppConfig.Nginx.LogDir, getLogFilename(domain, logType))
+	logPath := filepath.Join(config.AppConfig.Nginx.LogDir, getLogFilename(domain, port, logType))
 	
 	// 清空日志文件（不删除，保留文件）
 	if err := os.WriteFile(logPath, []byte{}, 0644); err != nil {
@@ -105,6 +108,7 @@ func ClearLog(c *gin.Context) {
 // SearchLog 搜索日志
 func SearchLog(c *gin.Context) {
 	domain := c.Query("domain")
+	port := c.Query("port")
 	logType := c.Query("type") // access 或 error
 	keyword := c.Query("keyword")
 	lines := c.DefaultQuery("lines", "100")
@@ -114,7 +118,7 @@ func SearchLog(c *gin.Context) {
 		return
 	}
 	
-	logPath := filepath.Join(config.AppConfig.Nginx.LogDir, getLogFilename(domain, logType))
+	logPath := filepath.Join(config.AppConfig.Nginx.LogDir, getLogFilename(domain, port, logType))
 	
 	logs, err := searchLogFile(logPath, keyword, lines)
 	if err != nil {
@@ -217,9 +221,12 @@ func searchLogFile(path string, keyword string, linesStr string) ([]string, erro
 	return matchedLines, nil
 }
 
-// getLogFilename 获取日志文件名
-func getLogFilename(domain string, logType string) string {
+// getLogFilename 获取日志文件名（与 Nginx 模板生成的文件名保持一致）
+func getLogFilename(domain string, port string, logType string) string {
 	if domain != "" {
+		if port != "" {
+			return "proxy_" + domain + "_" + port + "_" + logType + ".log"
+		}
 		return "proxy_" + domain + "_" + logType + ".log"
 	}
 	return logType + ".log"
