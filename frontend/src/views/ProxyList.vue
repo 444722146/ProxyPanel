@@ -27,7 +27,7 @@
     <!-- 代理列表 -->
     <el-card class="list-card">
       <el-table
-        :data="filteredProxies"
+        :data="paginatedProxies"
         v-loading="loading"
         style="width: 100%"
       >
@@ -86,6 +86,15 @@
           </template>
         </el-table-column>
       </el-table>
+
+      <el-pagination
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        :page-sizes="[10, 15, 20, 50]"
+        :total="totalCount"
+        layout="total, sizes, prev, pager, next, jumper"
+        style="margin-top: 16px; justify-content: flex-end;"
+      />
     </el-card>
 
     <!-- 创建/编辑对话框 -->
@@ -272,6 +281,8 @@ const formRef = ref(null)
 const simpleMode = ref(true)
 const serverInfo = ref({ public_ip: '', next_port: 9000 })
 const serverInfoLoading = ref(false)
+const currentPage = ref(1)
+const pageSize = ref(15)
 
 const dialogTitle = computed(() => isEdit.value ? '编辑代理' : '新增代理')
 
@@ -323,8 +334,16 @@ const loadData = async () => {
 }
 
 const handleSearch = () => {
-  // 搜索逻辑已通过computed实现
+  currentPage.value = 1
 }
+
+const paginatedProxies = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  const end = start + pageSize.value
+  return filteredProxies.value.slice(start, end)
+})
+
+const totalCount = computed(() => filteredProxies.value.length)
 
 const resetForm = () => {
   formData.value = {
