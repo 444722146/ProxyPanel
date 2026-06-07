@@ -26,11 +26,12 @@
 
     <!-- 代理列表 -->
     <el-card class="list-card">
-      <el-table
-        :data="paginatedProxies"
-        v-loading="loading"
-        style="width: 100%"
-      >
+      <div class="table-wrapper">
+        <el-table
+          :data="paginatedProxies"
+          v-loading="loading"
+          style="width: 100%; height: 100%"
+        >
         <el-table-column prop="id" label="ID" width="60" />
         <el-table-column prop="name" label="名称" width="160" />
         <el-table-column prop="domain" label="访问域名" width="180" />
@@ -86,6 +87,7 @@
           </template>
         </el-table-column>
       </el-table>
+      </div>
 
       <el-pagination
         v-model:current-page="currentPage"
@@ -93,7 +95,7 @@
         :page-sizes="[10, 15, 20, 50]"
         :total="totalCount"
         layout="total, sizes, prev, pager, next, jumper"
-        style="margin-top: 16px; justify-content: flex-end;"
+        style="margin-top: 12px; justify-content: flex-end; flex-shrink: 0;"
       />
     </el-card>
 
@@ -514,15 +516,37 @@ onMounted(() => {
 .proxy-list {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 12px;
+  height: calc(100vh - 40px);
+  overflow: hidden;
 }
 
 .toolbar-card {
   margin-bottom: 0;
+  flex-shrink: 0;
+}
+
+.toolbar-card :deep(.el-card__body) {
+  padding: 12px 16px;
 }
 
 .list-card {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.list-card :deep(.el-card__body) {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 12px 16px;
+}
+
+.table-wrapper {
+  flex: 1;
+  overflow: hidden;
 }
 
 .proxy-form {
