@@ -30,7 +30,8 @@
         <el-table
           :data="paginatedProxies"
           v-loading="loading"
-          style="width: 100%; height: 100%"
+          style="width: 100%"
+          height="100%"
         >
         <el-table-column prop="id" label="ID" width="60" />
         <el-table-column prop="name" label="名称" width="160" />
@@ -517,7 +518,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  height: calc(100vh - 40px);
+  height: 100%;
   overflow: hidden;
 }
 
@@ -537,11 +538,18 @@ onMounted(() => {
   overflow: hidden;
 }
 
+.list-card :deep(.el-card) {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
 .list-card :deep(.el-card__body) {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex: 1;
   padding: 12px 16px;
+  overflow: hidden;
 }
 
 .table-wrapper {

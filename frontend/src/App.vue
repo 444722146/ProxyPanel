@@ -179,6 +179,8 @@ const syncConfigs = async () => {
 .main-content {
   background: #f5f7fa;
   padding: 20px;
-  overflow-y: auto;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 </style>
