@@ -56,16 +56,11 @@ func GetErrorLog(c *gin.Context) {
 func GetGeneralAccessLog(c *gin.Context) {
 	lines := c.DefaultQuery("lines", "100")
 	
-	logPath := filepath.Join(config.AppConfig.Nginx.LogDir, "access.log")
-	logs, err := readLogFile(logPath, lines)
-	
-	// 如果通用日志不存在或为空，尝试合并所有代理日志
-	if err != nil || len(logs) == 0 || (len(logs) == 1 && logs[0] == "日志文件不存在") {
-		logs = mergeProxyLogs("access", lines)
-	}
+	// 始终合并所有代理的独立日志文件
+	logs := mergeProxyLogs("access", lines)
 	
 	utils.Success(c, gin.H{
-		"path": logPath,
+		"path": filepath.Join(config.AppConfig.Nginx.LogDir, "*access.log"),
 		"logs": logs,
 	})
 }
@@ -74,16 +69,11 @@ func GetGeneralAccessLog(c *gin.Context) {
 func GetGeneralErrorLog(c *gin.Context) {
 	lines := c.DefaultQuery("lines", "100")
 	
-	logPath := filepath.Join(config.AppConfig.Nginx.LogDir, "error.log")
-	logs, err := readLogFile(logPath, lines)
-	
-	// 如果通用日志不存在或为空，尝试合并所有代理日志
-	if err != nil || len(logs) == 0 || (len(logs) == 1 && logs[0] == "日志文件不存在") {
-		logs = mergeProxyLogs("error", lines)
-	}
+	// 始终合并所有代理的独立日志文件
+	logs := mergeProxyLogs("error", lines)
 	
 	utils.Success(c, gin.H{
-		"path": logPath,
+		"path": filepath.Join(config.AppConfig.Nginx.LogDir, "*error.log"),
 		"logs": logs,
 	})
 }
